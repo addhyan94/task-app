@@ -1,0 +1,290 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Task Manager</title>
+</head>
+<body>
+
+  <h1>Cloud Task Manager</h1>
+<form onsubmit="addTask(event)">
+  <input id="task" placeholder="Enter a task...." onkeydown="handleEnter(event)">
+  <button type="submit" onclick="addTask()">Add</button>
+  <button type="button" onclick="deleteAllTasks()">Delete All</button>
+</form>
+  <ul id="tasks"></ul>
+
+ <script>
+        const API = "https://api.secureserv.in";
+
+        async function loadTasks() {
+            const response = await fetch(`${API}/api/tasks`);
+            const tasks = await response.json();
+
+            document.getElementById("tasks").innerHTML =
+                tasks.map(task => `
+                    <li>
+                        ${task.title}
+                        <button onclick="toggleTask(${task.id})">
+                            ${task.completed ? "Undo" : "Done"}
+                        </button>
+                        <button onclick="deleteTask(${task.id})">
+                            Delete
+                        </button>
+                    </li>
+                `).join("");
+        }
+
+        async function addTask() {
+            event.preventDefault();
+            
+            const input = document.getElementById("task");
+
+            if (!input.value.trim()) return;
+
+            await fetch(`${API}/api/tasks`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    title: input.value
+                })
+            });
+
+            input.value = "";
+            loadTasks();
+        }
+
+        async function toggleTask(id) {
+            await fetch(`${API}/api/tasks/${id}`, {
+                method: "PUT"
+            });
+
+            loadTasks();
+        }
+
+        async function deleteTask(id) {
+            await fetch(`${API}/api/tasks/${id}`, {
+                method: "DELETE"
+            });
+
+            loadTasks();
+        }
+	async function deleteAllTasks() {
+    await fetch(`${API}/api/tasks`, {
+        method: "DELETE"
+    });
+
+    loadTasks();
+}
+        function handleEnter(event){
+            if(event.key === "Enter") {
+                addTask();
+            }
+        }
+        loadTasks();
+    </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="toast.css">
+
+    <style>
+        #status {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #f1f1f1;
+            display: inline-block;
+            font-size: 14px;
+        }
+    </style>
+    <title>Cloud Task Manager</title>
+</head>
+
+<body>
+
+    <h1>Cloud Task Manager</h1>
+
+    <form onsubmit="addTask(event)">
+        <input
+            id="task"
+            placeholder="Enter a task...."
+        >
+
+        <button type="submit">Add</button>
+
+        <button type="button" onclick="deleteAllTasks()">
+            Delete All
+        </button>
+    </form>
+
+    <ul id="tasks"></ul>
+
+    <script src="toast.js"></script>
+
+    <script>
+        const API = "https://api.secureserv.in";
+
+        // All status messages now use Toast
+        function setStatus(message, type = "success") {
+            showToast(message, type);
+        }
+
+        async function loadTasks() {
+            try {
+                const response = await fetch(`${API}/api/tasks`);
+
+                if (!response.ok) {
+                    throw new Error("Failed to load tasks");
+                }
+
+                const tasks = await response.json();
+
+                document.getElementById("tasks").innerHTML =
+                    tasks.map(task => `
+                        <li>
+                            ${task.title}
+
+                            <button onclick="toggleTask(${task.id})">
+                                ${task.completed ? "Undo" : "Done"}
+                            </button>
+
+                            <button onclick="deleteTask(${task.id})">
+                                Delete
+                            </button>
+                        </li>
+                    `).join("");
+
+            } catch (error) {
+                console.error(error);
+                setStatus("Failed to load tasks ✕", "error");
+            }
+        }
+
+        async function addTask(event) {
+            event.preventDefault();
+
+            const input = document.getElementById("task");
+
+            if (!input.value.trim()) {
+                setStatus("Enter a task first", "error");
+                return;
+            }
+
+            setStatus("Adding task...", "info");
+
+            try {
+                const response = await fetch(`${API}/api/tasks`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        title: input.value.trim()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to add task");
+                }
+
+                input.value = "";
+
+                await loadTasks();
+
+                setStatus("Task added ✓", "success");
+
+            } catch (error) {
+                console.error(error);
+                setStatus("Failed to add task ✕", "error");
+            }
+        }
+
+        async function toggleTask(id) {
+            setStatus("Updating task...", "info");
+
+            try {
+                const response = await fetch(`${API}/api/tasks/${id}`, {
+                    method: "PUT"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to update task");
+                }
+
+                await loadTasks();
+
+                setStatus("Task updated ✓", "success");
+
+            } catch (error) {
+                console.error(error);
+                setStatus("Failed to update task ✕", "error");
+            }
+        }
+
+        async function deleteTask(id) {
+            setStatus("Deleting task...", "info");
+
+            try {
+                const response = await fetch(`${API}/api/tasks/${id}`, {
+                    method: "DELETE"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to delete task");
+                }
+
+                await loadTasks();
+
+                setStatus("Task deleted ✓", "success");
+
+            } catch (error) {
+                console.error(error);
+                setStatus("Failed to delete task ✕", "error");
+            }
+        }
+
+        async function deleteAllTasks() {
+            setStatus("Deleting all tasks...", "info");
+
+            try {
+                const response = await fetch(`${API}/api/tasks`, {
+                    method: "DELETE"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to delete all tasks");
+                }
+
+                await loadTasks();
+
+                setStatus("All tasks deleted ✓", "success");
+
+            } catch (error) {
+                console.error(error);
+                setStatus("Failed to delete tasks ✕", "error");
+            }
+        }
+
+        function handleEnter(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                addTask(event);
+            }
+        }
+
+        loadTasks();
+    </script>
+
+</body>
+</html>

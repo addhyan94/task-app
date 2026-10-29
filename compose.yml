@@ -1,0 +1,25 @@
+services:
+
+  backend:
+   build: ./backend
+   container_name: task-app
+   ports:
+     - "5500:5500"
+   restart: unless-stopped
+   depends_on: 
+     - mongodb
+
+  frontend:
+   build: ./frontend
+   container_name: task-app-frontend
+   ports:
+     - "5550:80"
+   restart: unless-stopped
+
+  mongodb:
+   image: mongo:4.4
+   container_name: task-app-mongodb
+   volumes:
+     - ./mongo-data:/data/db
+   restart: unless-stopped
+
